@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# Retrieve arguments
+domain=$1
+user=$2
+
+path=/ftp_webapp_$user
+parent_dir=/var/www/webapp_$user
+final_path=$parent_dir/netftp
+
+# Check domain/path availability
+sudo yunohost app checkurl $domain$path -a netftp
+if [[ ! $? -eq 0 ]]; then
+    exit 1
+fi
+
+# Check user
+sudo yunohost user list --json | grep -q "\"username\": \"$user\""
+if [[ ! $? -eq 0 ]]; then
+echo "Wrong user"
+    exit 1
+fi
+sudo yunohost app setting netftp ftp_user -v $user
+
+# Vérifie si pure-ftpd est déjà installé
+if test ! -f /usr/sbin/pure-ftpd-ldap
+then # Installe Pure-ftpd uniquement si il ne l'est pas déjà
+    # Check port availability
+    sudo yunohost app checkport 21021
+    if [[ ! $? -eq 0 ]]; then
+    exit 1
+    fi
+
+    # Open port in firewall
+    sudo yunohost firewall allow TCP 21021 > /dev/null 2>&1
+
+    # Install debian dependencies
+    sudo apt-get install pure-ftpd-ldap -y -qq
+
+    # Change user ID in configurations
+    sed -i "s@FTPUSER@$user@g" ../conf/ldap.conf
+    sed -i "s@FTPDIR@$parent_dir@g" ../conf/ldap.conf
+
+    # Adapt PureFTPd configuration
+    sudo cp ../conf/ldap.conf /etc/pure-ftpd/db/
+    sudo sh -c 'echo "yes" > /etc/pure-ftpd/conf/NoAnonymous'
+    sudo sh -c 'echo "yes" > /etc/pure-ftpd/conf/ChrootEveryone'
+    sudo sh -c 'echo "no" > /etc/pure-ftpd/conf/UnixAuthentication'
+    sudo sh -c 'echo "50000 50100" > /etc/pure-ftpd/conf/PassivePortRange'
+    sudo sh -c 'echo "21021" > /etc/pure-ftpd/conf/Bind'
+
+    # Augmenter l'upload autorisé dans php
+    sudo sed -n '/upload_max_filesize/p' /etc/php5/fpm/php.ini; sudo sed -i.bak "s@= .*M@= 100M@" /etc/php5/fpm/php.ini
+
+    # Register service to YunoHost monitoring
+    sudo yunohost service add pure-ftpd-ldap --log "/var/log/pure-ftpd/transfer.log"
+
+    # Restart PureFTPd
+    sudo service pure-ftpd-ldap restart
+else
+    echo "Installation de pure-ftpd ignorée, pure-ftpd est déjà installé."
+fi
+
+# Copier le client ftp net2ftp
+sudo cp -r ../sources/net2ftp $parent_dir/netftp
+
+# Configurer net2ftp
+sed -i "s@__DOMAIN__@$domain@" ../conf/settings_authorizations.inc.php
+# sed -i "s@__EMAIL__@$???@g" ../conf/settings.inc.php
+sed -i "s@__EMAIL__@email.org@" ../conf/settings.inc.php
+# sed -i "s@__LANG__@$???@g" ../conf/settings.inc.php
+sed -i "s@__LANG__@fr@" ../conf/settings.inc.php
+
+# Copier les fichiers de config
+sudo cp ../conf/settings_authorizations.inc.php $parent_dir/netftp/
+sudo cp ../conf/settings.inc.php $parent_dir/netftp/
+
+# Appliquer permissions à net2ftp
+sudo chmod 775 -R $parent_dir/netftp
+sudo chown -hR www-data:www-data $parent_dir/netftp
+
+# Modify Nginx configuration file and copy it to Nginx conf directory for net2ftp
+sed -i "s@PATHTOCHANGE@$path@g" ../conf/nginx.conf
+sed -i "s@ALIASTOCHANGE@$parent_dir/netftp/@g" ../conf/nginx.conf
+sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/netftp_$user.conf
+
+# Reload Nginx and regenerate SSOwat conf
+sudo service nginx reload
+sudo yunohost app ssowatconf
