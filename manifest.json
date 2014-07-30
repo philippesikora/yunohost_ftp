@@ -1,0 +1,34 @@
+{
+    "name": "FTP support for webapp",
+    "id": "ftp_webapp",
+    "description": {
+        "en": "FTP server and client Net2ftp configurated for use with webapp",
+        "fr": "Serveur FTP et client Net2ftp configuré pour être utilisé avec les webapp"
+    },
+    "developer": {
+        "name": "Maniack Crudelis",
+        "email": "maniack_crudelis@yahoo.fr",
+        "url": "http://crudelis.fr"
+    },
+    "multi_instance": "true",
+    "arguments": {
+        "install" : [
+            {
+                "name": "domain",
+                "ask": {
+                    "en": "Choose a domain for your Webapp",
+                    "fr": "Choisissez un domaine pour votre Webapp"
+                },
+                "example": "domain.org"
+            },
+            {
+                "name": "admin",
+                "ask": {
+                    "en": "Choose the YunoHost user who will be able to upload documents via FTP",
+                    "fr": "Choisissez l'utilisateur YunoHost qui sera capable d'envoyer des documents via FTP"
+                },
+                "example": "johndoe"
+            }
+        ]
+    }
+}
