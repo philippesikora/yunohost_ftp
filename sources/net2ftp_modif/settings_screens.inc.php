@@ -37,13 +37,13 @@ $net2ftp_settings["functionuse_jupload"] = "yes";
 $net2ftp_settings["functionuse_easyWebsite"] = "no";
 
 // Bookmark a page
-$net2ftp_settings["functionuse_bookmark"] = "yes";
+$net2ftp_settings["functionuse_bookmark"] = "no";
 
 // Install functions
-$net2ftp_settings["functionuse_install"] = "yes";
+$net2ftp_settings["functionuse_install"] = "no";
 
 // Advanced functions
-$net2ftp_settings["functionuse_advanced"] = "yes";
+$net2ftp_settings["functionuse_advanced"] = "no";
 
 
 // ----------------------------------------------------------------------------------
@@ -69,7 +69,7 @@ $net2ftp_settings["functionuse_downloadzip"] = "yes";
 $net2ftp_settings["functionuse_unzip"] = "yes";
 
 // Zip-and-save, zip-and-email
-$net2ftp_settings["functionuse_zip"] = "yes";
+$net2ftp_settings["functionuse_zip"] = "no";
 
 // Calculate size
 $net2ftp_settings["functionuse_calculatesize"] = "yes";
@@ -95,7 +95,7 @@ $net2ftp_settings["functionuse_edit"] = "yes";
 // Update file (beta function)
 $net2ftp_settings["functionuse_update"] = "no";
 
-// Open file 
-$net2ftp_settings["functionuse_open"] = "yes";
+// Open file
+$net2ftp_settings["functionuse_open"] = "no";
 
 ?>

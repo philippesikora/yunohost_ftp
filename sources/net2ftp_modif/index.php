@@ -1,36 +1,37 @@
 <?php
 
 /*  Hi,
-    
+
     Thanks for downloading net2ftp!
-    
+
     This page shows how to integrate net2ftp in a generic PHP page.
     It is quite easy:
     1. Define the constants NET2FTP_APPLICATION_ROOTDIR and NET2FTP_APPLICATION_ROOTDIR_URL
     2. Include the file main.inc.php
-    3. Execute 5 net2ftp() calls to send the HTTP headers, print the Javascript 
+    3. Execute 5 net2ftp() calls to send the HTTP headers, print the Javascript
        code, print the HTML body, etc...
     4. Check if an error occured to print out an error message.
-    
+
     Look in /integration for more elaborate examples.
-    
+
     Enjoy,
-    
-    David 
+
+    David
 */
 
 // ------------------------------------------------------------------------
 // 1. Define the constants NET2FTP_APPLICATION_ROOTDIR and NET2FTP_APPLICATION_ROOTDIR_URL
 // ------------------------------------------------------------------------
-$server_protocol = "http://";
-if (isset($_SERVER["SERVER_PROTOCOL"]) == true && stripos($_SERVER["SERVER_PROTOCOL"], "https") !== false) { $server_protocol = "https://"; } 
+//MODIFICATION PAR MANIACK CRUDELIS
+$server_protocol = "https://";
+if (isset($_SERVER["SERVER_PROTOCOL"]) == true && stripos($_SERVER["SERVER_PROTOCOL"], "https") !== false) { $server_protocol = "https://"; }
 $http_host = "";
 if (isset($_SERVER["HTTP_HOST"]) == true) { $http_host = $_SERVER["HTTP_HOST"]; }
 $script_name = "/index.php";
 if (isset($_SERVER["SCRIPT_NAME"]) == true)  { $script_name = dirname($_SERVER["SCRIPT_NAME"]); }
 elseif (isset($_SERVER["PHP_SELF"]) == true) { $script_name = dirname($_SERVER["PHP_SELF"]); }
 define("NET2FTP_APPLICATION_ROOTDIR", dirname(__FILE__));
-define("NET2FTP_APPLICATION_ROOTDIR_URL", $server_protocol . $http_host . $script_name); 
+define("NET2FTP_APPLICATION_ROOTDIR_URL", $server_protocol . $http_host . $script_name);
 
 // ------------------------------------------------------------------------
 // 2. Include the file /path/to/net2ftp/includes/main.inc.php
@@ -38,7 +39,7 @@ define("NET2FTP_APPLICATION_ROOTDIR_URL", $server_protocol . $http_host . $scrip
 require_once("./includes/main.inc.php");
 
 // ------------------------------------------------------------------------
-// 3. Execute net2ftp($action). Note that net2ftp("sendHttpHeaders") MUST 
+// 3. Execute net2ftp($action). Note that net2ftp("sendHttpHeaders") MUST
 //    be called once before the other net2ftp() calls!
 // ------------------------------------------------------------------------
 net2ftp("sendHttpHeaders");
@@ -66,7 +67,7 @@ if ($net2ftp_result["success"] == false) {
 
 <?php
 // ------------------------------------------------------------------------
-// 4. Check the result and print out an error message. This can be done using 
+// 4. Check the result and print out an error message. This can be done using
 //    a template, or by accessing the $net2ftp_result variable directly.
 // ------------------------------------------------------------------------
 if ($net2ftp_result["success"] == false) {

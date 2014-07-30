@@ -1,13 +1,29 @@
 #!/bin/bash
 
-domain=$(sudo yunohost app setting my_webapp domain)
+user=$(sudo yunohost app setting ftp_webapp ftp_user)
+domain=$(sudo yunohost app setting ftp_webapp domain)
+parent_dir=/var/www/webapp_$user
+final_path=$parent_dir/netftp
 
-sudo service pure-ftpd-ldap stop
-sudo apt-get remove -y -qq pure-ftpd-ldap pure-ftpd-common
-sudo yunohost app service -R pure-ftpd-ldap
+# Suppression du dossier de net2ftp
+sudo rm -rf $final_path
+# Suppression de la config nginx de net2ftp
+sudo rm -f /etc/nginx/conf.d/$domain.d/netftp_$user.conf
 
-sudo rm -rf /var/www/my_webapp
-sudo rm -f /etc/nginx/conf.d/$domain.d/my_webapp.conf
+# Vérifie si le dossier parent est vide. Ce qui signifie que toutes les webapp ont été désinstallées. Ainsi que le client ftp net2ftp.
+if test -z "$(ls $parent_dir | head -n1)"
+then
+    sudo rmdir $parent_dir
+fi
+
+# Vérifie si il reste encore au moins une instance de net2ftp dans un dossier de webapp
+if test -z "$(ls /etc/nginx/conf.d/$domain.d/ | grep netftp_ | head -n1)"
+then	# Si il n'y a plus aucun net2ftp installé, désinstalle pure-ftpd
+    sudo service pure-ftpd-ldap stop
+    sudo apt-get purge -y -qq pure-ftpd-ldap pure-ftpd-common
+    sudo yunohost service remove pure-ftpd-ldap
+    sudo yunohost firewall disallow TCP 21021
+fi
 
 sudo service nginx reload
 sudo yunohost app ssowatconf

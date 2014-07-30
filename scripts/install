@@ -9,7 +9,7 @@ parent_dir=/var/www/webapp_$user
 final_path=$parent_dir/netftp
 
 # Check domain/path availability
-sudo yunohost app checkurl $domain$path -a netftp
+sudo yunohost app checkurl $domain$path -a ftp_webapp
 if [[ ! $? -eq 0 ]]; then
     exit 1
 fi
@@ -20,7 +20,19 @@ if [[ ! $? -eq 0 ]]; then
 echo "Wrong user"
     exit 1
 fi
-sudo yunohost app setting netftp ftp_user -v $user
+sudo yunohost app setting ftp_webapp ftp_user -v $user
+
+# Créer le dossier parent des webapp pour l'utilisateur
+if test ! -d $parent_dir
+then	# Créer le dossier parent uniquement si il n'existe pas
+    sudo mkdir -p $parent_dir
+
+    # Set permissions
+    sudo chmod 775 -R $parent_dir
+    sudo chown -hR www-data:www-data $parent_dir
+else
+    echo "Création du dossier $parent_dir ignorée, le dossier existe déjà."
+fi
 
 # Vérifie si pure-ftpd est déjà installé
 if test ! -f /usr/sbin/pure-ftpd-ldap
@@ -61,15 +73,14 @@ else
     echo "Installation de pure-ftpd ignorée, pure-ftpd est déjà installé."
 fi
 
-# Copier le client ftp net2ftp
+# Copie du client ftp net2ftp
 sudo cp -r ../sources/net2ftp $parent_dir/netftp
+
+# Copie des fichiers modifiés de net2ftp
+sudo cp -r ../sources/net2ftp_modif/* $parent_dir/netftp/
 
 # Configurer net2ftp
 sed -i "s@__DOMAIN__@$domain@" ../conf/settings_authorizations.inc.php
-# sed -i "s@__EMAIL__@$???@g" ../conf/settings.inc.php
-sed -i "s@__EMAIL__@email.org@" ../conf/settings.inc.php
-# sed -i "s@__LANG__@$???@g" ../conf/settings.inc.php
-sed -i "s@__LANG__@fr@" ../conf/settings.inc.php
 
 # Copier les fichiers de config
 sudo cp ../conf/settings_authorizations.inc.php $parent_dir/netftp/
@@ -84,6 +95,7 @@ sed -i "s@PATHTOCHANGE@$path@g" ../conf/nginx.conf
 sed -i "s@ALIASTOCHANGE@$parent_dir/netftp/@g" ../conf/nginx.conf
 sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/netftp_$user.conf
 
-# Reload Nginx and regenerate SSOwat conf
+# Reload Nginx and php, and regenerate SSOwat conf
 sudo service nginx reload
+sudo service php5-fpm reload
 sudo yunohost app ssowatconf

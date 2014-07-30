@@ -61,8 +61,8 @@ $net2ftp_settings["message_browse"] = "";
 
 
 // ----------------------------------------------------------------------------------
-// A MySQL database is optional. It can be used for: logging the users,
-// checking the consumption of network and server resources (data transfer
+// A MySQL database is optional. It can be used for: logging the users, 
+// checking the consumption of network and server resources (data transfer 
 // volume and script execution time), and checking the user's home directory
 // ----------------------------------------------------------------------------------
 
@@ -98,7 +98,7 @@ $net2ftp_settings["syslog_ident"] = "net2ftp";
 // upload, download, copy, move, search, view, edit
 // ----------------------------------------------------------------------------------
 
-$net2ftp_settings["max_filesize"]  = "100000000";  // in Bytes, default 10 MB. 100MB
+$net2ftp_settings["max_filesize"]  = "10000000";  // in Bytes, default 10 MB
 
 // Note: IF YOU WANT TO ALLOW LARGE FILE UPLOADS, YOU MAY HAVE TO ADJUST
 //       THE FOLLOWING PARAMETERS:
@@ -136,7 +136,7 @@ $net2ftp_settings["application_build_nr"] = "47";
 // Is this net2ftp.com, or a net2ftp installation elsewhere
 $net2ftp_settings["net2ftpdotcom"] = "no";
 
-// Show advertisements
+// Show advertisements 
 // Not shown when using HTTPS to avoid warnings on each pageload
 $net2ftp_settings["show_ads"] = "no";
 

@@ -21,10 +21,12 @@
 // ----------------------------------------------------------------------------------
 
 // Enter your email address; this is used as "from" address when sending files in attachment
-$net2ftp_settings["email_feedback"] = "webmaster@enter-your-domain-here.com";
+//MODIFICATION PAR MANIACK CRUDELIS
+$net2ftp_settings["email_feedback"] = "__EMAIL__";
 
 // Default language and skin (look in /languages and /skins to see which are available)
-$net2ftp_settings["default_language"] = "en";
+//MODIFICATION PAR MANIACK CRUDELIS
+$net2ftp_settings["default_language"] = "__LANG__";
 $net2ftp_settings["default_skin"]     = "shinra";
 
 // Enter the address of your help pages, support forum or ticket system
