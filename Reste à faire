@@ -1,8 +1,0 @@
-Éléments devant encore être développé:
-
-- Gestion multi user ldap pour pure-ftpd
-
-Une solution serait de se pencher sur l'EXTENDED LDAP SCHEMA
-Tel que décrit ici: http://download.pureftpd.org/pub/pure-ftpd/doc/README.LD
-
-- Ajout éventuellement de scripts d'upgrade.
