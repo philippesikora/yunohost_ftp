@@ -16,8 +16,8 @@
             {
                 "name": "domain",
                 "ask": {
-                    "en": "Choose a domain for your Webapp",
-                    "fr": "Choisissez un domaine pour votre Webapp"
+                    "en": "Choose a domain for your ftp client",
+                    "fr": "Choisissez un domaine pour votre client ftp"
                 },
                 "example": "domain.org"
             },
@@ -28,6 +28,15 @@
                     "fr": "Choisissez l'utilisateur YunoHost qui sera capable d'envoyer des documents via FTP"
                 },
                 "example": "johndoe"
+            },
+            {
+				"name": "language",
+				"ask": {
+					"en": "Choose the language of the ftp client",
+					"fr": "Choissisez la langue du client ftp"
+				},
+				"choices": ["English", "French", "Arabic", "Arabic UTF-8", "Simplified Chinese", "Traditional Chinese", "Czech", "Danish UTF-8", "Dutch", "English", "English UTF-8", "French", "German", "Finnish", "Hebrew", "Hungarian", "Hungarian UTF-8", "Italian", "Japanese", "Polish", "Portugese", "Russian", "Spanish", "Swedish", "Turkish", "Ukrainian", "Vietnamese"],
+				"default": "English"
             }
         ]
     }
