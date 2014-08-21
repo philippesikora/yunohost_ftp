@@ -24,7 +24,7 @@
 $net2ftp_settings["email_feedback"] = "webmaster@enter-your-domain-here.com";
 
 // Default language and skin (look in /languages and /skins to see which are available)
-$net2ftp_settings["default_language"] = "en";
+$net2ftp_settings["default_language"] = "__LANG__";
 $net2ftp_settings["default_skin"]     = "shinra";
 
 // Enter the address of your help pages, support forum or ticket system
