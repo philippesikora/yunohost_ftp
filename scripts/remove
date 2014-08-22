@@ -9,6 +9,9 @@ final_path=$parent_dir/netftp
 sudo rm -rf $final_path
 # Suppression de la config nginx de net2ftp
 sudo rm -f /etc/nginx/conf.d/$domain.d/netftp_$user.conf
+# Suppression de la config php-fpm de net2ftp
+sudo rm -f /etc/php5/fpm/pool.d/netftp.conf
+sudo rm -f etc/php5/fpm/conf.d/20-netftp.ini
 
 # Vérifie si le dossier parent est vide. Ce qui signifie que toutes les webapp ont été désinstallées. Ainsi que le client ftp net2ftp.
 if test -z "$(ls $parent_dir | head -n1)"
@@ -25,5 +28,7 @@ then	# Si il n'y a plus aucun net2ftp installé, désinstalle pure-ftpd
     sudo yunohost firewall disallow TCP 21021
 fi
 
+# Reload Nginx and php, and regenerate SSOwat conf
 sudo service nginx reload
 sudo yunohost app ssowatconf
+sudo service php5-fpm reload
