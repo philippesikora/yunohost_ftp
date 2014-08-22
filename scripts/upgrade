@@ -20,9 +20,6 @@ sudo sh -c 'echo "no" > /etc/pure-ftpd/conf/UnixAuthentication'
 sudo sh -c 'echo "50000 50100" > /etc/pure-ftpd/conf/PassivePortRange'
 sudo sh -c 'echo "21021" > /etc/pure-ftpd/conf/Bind'
 
-# Augmenter l'upload autorisé dans php
-sudo sed -n '/upload_max_filesize/p' /etc/php5/fpm/php.ini; sudo sed -i.bak "s@= .*M@= 100M@" /etc/php5/fpm/php.ini
-
 # Restart PureFTPd
 sudo service pure-ftpd-ldap restart
 
