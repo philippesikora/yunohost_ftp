@@ -62,9 +62,6 @@ then # Installe Pure-ftpd uniquement si il ne l'est pas déjà
     sudo sh -c 'echo "50000 50100" > /etc/pure-ftpd/conf/PassivePortRange'
     sudo sh -c 'echo "21021" > /etc/pure-ftpd/conf/Bind'
 
-    # Augmenter l'upload autorisé dans php
-    sudo sed -n '/upload_max_filesize/p' /etc/php5/fpm/php.ini; sudo sed -i.bak "s@= .*M@= 100M@" /etc/php5/fpm/php.ini
-
     # Register service to YunoHost monitoring
     sudo yunohost service add pure-ftpd-ldap --log "/var/log/pure-ftpd/transfer.log"
 
@@ -149,7 +146,18 @@ sudo chown -hR www-data:www-data $parent_dir/netftp
 # Modify Nginx configuration file and copy it to Nginx conf directory for net2ftp
 sed -i "s@PATHTOCHANGE@$path@g" ../conf/nginx.conf
 sed -i "s@ALIASTOCHANGE@$parent_dir/netftp/@g" ../conf/nginx.conf
+sed -i "s@NAMETOCHANGE@netftp@g" ../conf/nginx.conf
 sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/netftp_$user.conf
+
+# Modify php-fpm pool configuration and copy it to php-fpm pool directory for net2ftp
+sed -i "s@NAMETOCHANGE@netftp@g" ../conf/php-fpm.conf
+sed -i "s@FINAL_PATH@$final_path@g" ../conf/php-fpm.conf
+finalphpconf=/etc/php5/fpm/pool.d/netftp.conf
+sudo cp ../conf/php-fpm.conf $finalphpconf
+sudo chown root: $finalphpconf
+finalphpini=/etc/php5/fpm/conf.d/20-netftp.ini
+sudo cp ../conf/php-fpm.ini $finalphpini
+sudo chown root: $finalphpini
 
 # Reload Nginx and php, and regenerate SSOwat conf
 sudo service nginx reload
