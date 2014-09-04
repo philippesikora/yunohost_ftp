@@ -11,7 +11,7 @@ sudo rm -rf $final_path
 sudo rm -f /etc/nginx/conf.d/$domain.d/netftp_$user.conf
 # Suppression de la config php-fpm de net2ftp
 sudo rm -f /etc/php5/fpm/pool.d/netftp.conf
-sudo rm -f etc/php5/fpm/conf.d/20-netftp.ini
+sudo rm -f /etc/php5/fpm/conf.d/20-netftp.ini
 
 # Vérifie si le dossier parent est vide. Ce qui signifie que toutes les webapp ont été désinstallées. Ainsi que le client ftp net2ftp.
 if test -z "$(ls $parent_dir | head -n1)"
