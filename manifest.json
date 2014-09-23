@@ -5,6 +5,7 @@
         "en": "FTP server and client Net2ftp configurated for use with webapp",
         "fr": "Serveur FTP et client Net2ftp configuré pour être utilisé avec les webapp"
     },
+    "license": "BSD (pure-ftpd) GPL-2 (Net2ftp)"
     "developer": {
         "name": "Maniack Crudelis",
         "email": "maniack_crudelis@yahoo.fr",
