@@ -5,11 +5,11 @@
         "en": "FTP server and client Net2ftp configurated for use with webapp on the custom port 21021",
         "fr": "Serveur FTP et client Net2ftp configuré pour être utilisé avec les webapp sur le port personnalisé 21021"
     },
-    "license": "BSD (pure-ftpd) GPL-2 (Net2ftp)",
-    "developer": {
+	"version": "1.0",
+	"url": "http://www.net2ftp.com/",
+    "maintainer": {
         "name": "Maniack Crudelis",
-        "email": "maniack_crudelis@yahoo.fr",
-        "url": "http://crudelis.fr"
+        "email": "maniackc_dev@crudelis.fr"
     },
     "multi_instance": "false",
     "arguments": {
