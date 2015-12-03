@@ -1,16 +1,21 @@
 #!/bin/bash
 
-# Retrieve arguments
-domain=$(sudo yunohost app setting ftp_webapp domain)
-user=$(sudo yunohost app setting ftp_webapp ftp_user)
+app=ftp_webapp
 
-path=/ftp_webapp_$user
+# Récupère les infos de l'application.
+admin=$(sudo yunohost app setting $app admin)
+domain=$(sudo yunohost app setting $app domain)
+port=$(sudo yunohost app setting $app port)
+language_file=$(sudo yunohost app setting $app language_file)
 parent_dir=/var/www/webapp_$user
+
+path=/ftp_webapp_$admin
+parent_dir=/var/www/webapp_$admin
 final_path=$parent_dir/netftp
 
 # Change user ID in configurations
-sed -i "s@FTPUSER@$user@g" ../conf/ldap.conf
-sed -i "s@FTPDIR@$parent_dir@g" ../conf/ldap.conf
+sed -i "s@__FTPUSER__@$admin@g" ../conf/ldap.conf
+sed -i "s@__FTPDIR__@$parent_dir@g" ../conf/ldap.conf
 
 # Adapt PureFTPd configuration
 sudo cp ../conf/ldap.conf /etc/pure-ftpd/db/
@@ -18,45 +23,59 @@ sudo sh -c 'echo "yes" > /etc/pure-ftpd/conf/NoAnonymous'
 sudo sh -c 'echo "yes" > /etc/pure-ftpd/conf/ChrootEveryone'
 sudo sh -c 'echo "no" > /etc/pure-ftpd/conf/UnixAuthentication'
 sudo sh -c 'echo "50000 50100" > /etc/pure-ftpd/conf/PassivePortRange'
-sudo sh -c 'echo "21021" > /etc/pure-ftpd/conf/Bind'
+sudo sh -c "echo "$port" > /etc/pure-ftpd/conf/Bind"
 
 # Restart PureFTPd
 sudo service pure-ftpd-ldap restart
 
-# Copie du client ftp net2ftp
-sudo cp -r ../sources/net2ftp $parent_dir/netftp
-
-# Copie des fichiers modifiés de net2ftp
-sudo cp -r ../sources/net2ftp_modif/* $parent_dir/netftp/
+# Décompresse la source
+tar -x -f ../sources/net2ftp.tar.gz
+# Copie les fichiers sources
+sudo cp -a net2ftp/. "$final_path"
+# Copie les fichiers additionnels ou modifiés.
+sudo cp -a ../sources/ajouts/. "$final_path"
+# Et copie le fichier de config nginx
+sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
 
 # Configurer net2ftp
 sed -i "s@__DOMAIN__@$domain@" ../conf/settings_authorizations.inc.php
+sed -i "s@__LANG__@$language_file@" ../conf/settings.inc.php
 
 # Copier les fichiers de config
-sudo cp ../conf/settings_authorizations.inc.php $parent_dir/netftp/
-sudo cp ../conf/settings.inc.php $parent_dir/netftp/
+sudo cp ../conf/settings_authorizations.inc.php $final_path
+sudo cp ../conf/settings.inc.php $final_path
 
-# Appliquer permissions à net2ftp
-sudo chmod 775 -R $parent_dir/netftp
-sudo chown -hR www-data:www-data $parent_dir/netftp
+# Configure les droits d'accès au fichiers
+# -rw-r--r-- sur les fichiers
+sudo find $final_path -type f -print0 | xargs -0 sudo chmod 644
+# drwxr-xr-x sur les dossiers
+# sudo find $final_path -type d | xargs sudo chmod 755
+sudo find $final_path -type d -print0 | xargs -0 sudo chmod 755
+# Les fichiers appartiennent à root
+sudo chown -R root: $final_path
 
-# Modify Nginx configuration file and copy it to Nginx conf directory for net2ftp
-sed -i "s@PATHTOCHANGE@$path@g" ../conf/nginx.conf
-sed -i "s@ALIASTOCHANGE@$parent_dir/netftp/@g" ../conf/nginx.conf
-sed -i "s@NAMETOCHANGE@netftp@g" ../conf/nginx.conf
-sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/netftp_$user.conf
+# www-data doit avoir les droits d'écriture sur le dossier temp.
+sudo chown -R www-data: $final_path/temp
 
-# Modify php-fpm pool configuration and copy it to php-fpm pool directory for net2ftp
-sed -i "s@NAMETOCHANGE@netftp@g" ../conf/php-fpm.conf
-sed -i "s@FINAL_PATH@$final_path@g" ../conf/php-fpm.conf
-finalphpconf=/etc/php5/fpm/pool.d/netftp.conf
+# Modifie les variables dans le fichier de configuration nginx
+sudo sed -i "s@__PATHTOCHANGE__@$path@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
+sudo sed -i "s@__FINALPATH__@$final_path@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
+sudo sed -i "s@__NAMETOCHANGE__@$app@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
+
+
+# Créer le fichier de configuration du pool php-fpm et le configure.
+sed -i "s@__NAMETOCHANGE__@$app@g" ../conf/php-fpm.conf
+sed -i "s@__FINALPATH__@$final_path@g" ../conf/php-fpm.conf
+finalphpconf=/etc/php5/fpm/pool.d/$app.conf
 sudo cp ../conf/php-fpm.conf $finalphpconf
 sudo chown root: $finalphpconf
-finalphpini=/etc/php5/fpm/conf.d/20-netftp.ini
+finalphpini=/etc/php5/fpm/conf.d/20-$app.ini
 sudo cp ../conf/php-fpm.ini $finalphpini
 sudo chown root: $finalphpini
 
-# Reload Nginx and php, and regenerate SSOwat conf
+
+# Recharge la configuration Nginx et php5-fpm
 sudo service nginx reload
 sudo service php5-fpm reload
+# Régénère la configuration de SSOwat
 sudo yunohost app ssowatconf
