@@ -33,6 +33,9 @@ then	# Si il n'y a plus aucun net2ftp installé, désinstalle pure-ftpd
     sudo yunohost firewall disallow TCP $port
 fi
 
+# Suppression de la configuration de logrotate
+sudo rm /etc/logrotate.d/$app
+
 # Recharge la configuration Nginx et php5-fpm
 sudo service nginx reload
 sudo service php5-fpm reload

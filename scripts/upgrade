@@ -73,6 +73,9 @@ finalphpini=/etc/php5/fpm/conf.d/20-$app.ini
 sudo cp ../conf/php-fpm.ini $finalphpini
 sudo chown root: $finalphpini
 
+# Configuration de logrotate
+sudo cp ../conf/logrotate /etc/logrotate.d/$app
+
 
 # Recharge la configuration Nginx et php5-fpm
 sudo service nginx reload
