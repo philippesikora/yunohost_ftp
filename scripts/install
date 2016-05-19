@@ -1,10 +1,47 @@
 #!/bin/bash
 
-# Récupère les infos de l'application.
-domain=$1
-admin=$2
-language=$3
-app=ftp_webapp
+ynh_version=$(sudo yunohost -v | grep "moulinette:" | cut -d' ' -f2 | cut -d'.' -f1,2)
+# Retrieve arguments
+if [ $ynh_version = "2.4" ]
+then
+	domain=$YNH_APP_ARG_DOMAIN
+	admin=$YNH_APP_ARG_ADMIN
+	language=$YNH_APP_ARG_LANGUAGE
+
+	app=$YNH_APP_INSTANCE_NAME
+
+	# Source app helpers
+	. /usr/share/yunohost/helpers
+else
+	domain=$1
+	admin=$2
+	language=$3
+	app=ftp_webapp
+fi
+
+
+# Delete files and db if exit with an error
+EXIT_PROPERLY () {
+	trap '' ERR
+	echo -e "\e[91m \e[1m"	# Shell in light red bold
+	echo -e "!!\n  $app install's script has encountered an error. Installation was cancelled.\n!!"
+
+	if [ $ynh_version = "2.2" ]; then
+		/bin/bash ./remove	# Appel le script remove. En 2.2, ce comportement n'est pas automatique.
+	fi
+	exit 1
+}
+TRAP_ON () {	# Activate signal capture
+	trap EXIT_PROPERLY ERR	# Capturing exit signals on error
+}
+TRAP_OFF () {	# Ignoring signal capture until TRAP_ON
+# Pour une raison que j'ignore, la fonction TRAP_ON fonctionne très bien.
+# Mais pas la fonction TRAP_OFF...
+# Utiliser directement `trap '' ERR` dans le code pour l'utiliser, à la place de la fonction.
+	trap '' ERR	# Ignoring exit signals
+}
+TRAP_ON
+
 
 path=/ftp_webapp_$admin
 parent_dir=/var/www/webapp_$admin
@@ -14,13 +51,13 @@ final_path=$parent_dir/netftp
 sudo yunohost user list --json | grep -q "\"username\": \"$admin\""
 if [[ ! $? -eq 0 ]]; then
     echo "Wrong admin"
-    exit 1
+    touch /force_stop
 fi
 
 # Vérifie la disponibilité du path et du domaine.
 sudo yunohost app checkurl $domain$path -a $app
 if [[ ! $? -eq 0 ]]; then
-    exit 1
+    touch /force_stop
 fi
 
 # Créer le dossier parent des webapp pour l'utilisateur

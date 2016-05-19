@@ -1,8 +1,12 @@
 #!/bin/bash
 
-app=ftp_webapp
-
 # Récupère les infos de l'application.
+ynh_version=$(sudo yunohost -v | grep "moulinette:" | cut -d' ' -f2 | cut -d'.' -f1,2)
+if [ $ynh_version = "2.4" ]; then
+	app=$YNH_APP_INSTANCE_NAME
+else
+	app=ftp_webapp
+fi
 admin=$(sudo yunohost app setting $app admin)
 domain=$(sudo yunohost app setting $app domain)
 port=$(sudo yunohost app setting $app port)

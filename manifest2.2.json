@@ -2,9 +2,6 @@
     "name": "FTP support for webapp",
     "id": "ftp_webapp",
     "packaging_format": 1,
-    "requirements": {
-        "yunohost": ">= 2.4"
-    },
     "description": {
         "en": "FTP server and client Net2ftp configurated for use with webapp on the custom port 21021",
         "fr": "Serveur FTP et client Net2ftp configuré pour être utilisé avec les webapp sur le port personnalisé 21021"
