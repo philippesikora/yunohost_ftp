@@ -191,6 +191,8 @@ sed -i "s@__PORT__@$port@" ../conf/registerglobals.inc.php
 # Copier les fichiers de config
 sudo cp ../conf/settings_authorizations.inc.php $final_path
 sudo cp ../conf/settings.inc.php $final_path
+sudo yunohost app setting $app settings_authorizations.inc.php_file_md5 -v $(md5sum "$final_path/settings_authorizations.inc.php" | cut -d' ' -f1)
+sudo yunohost app setting $app settings.inc.php_file_md5 -v $(md5sum "$final_path/settings.inc.php" | cut -d' ' -f1)
 sudo cp ../conf/registerglobals.inc.php $final_path/includes
 
 # Configure les droits d'accès au fichiers
