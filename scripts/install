@@ -69,10 +69,8 @@ if test ! -f /usr/sbin/pure-ftpd-ldap
 then # Installe Pure-ftpd uniquement si il ne l'est pas déjà
 	# Cherche un port libre.
 	port=21021
-	sudo yunohost app checkport $port
-	while [[ ! $? -eq 0 ]]; do
+	while ! sudo yunohost app checkport $port ; do
 		port=$((port+1))
-		sudo yunohost app checkport $port
 	done
 
 	# Ouvre le port dans le firewall
