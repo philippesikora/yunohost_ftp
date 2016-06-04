@@ -48,17 +48,10 @@ parent_dir=/var/www/webapp_$admin
 final_path=$parent_dir/netftp
 
 # Vérifie la validité de l'user admin
-sudo yunohost user list --json | grep -q "\"username\": \"$admin\""
-if [[ ! $? -eq 0 ]]; then
-    echo "Wrong admin"
-    touch /force_stop
-fi
+sudo yunohost user list --json | grep -q "\"username\": \"$admin\"" || (echo "Wrong admin" && touch /force_stop 2> /dev/null)
 
 # Vérifie la disponibilité du path et du domaine.
 sudo yunohost app checkurl $domain$path -a $app
-if [[ ! $? -eq 0 ]]; then
-    touch /force_stop
-fi
 
 # Créer le dossier parent des webapp pour l'utilisateur
 if test ! -d $parent_dir
