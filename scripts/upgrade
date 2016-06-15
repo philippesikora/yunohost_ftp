@@ -1,7 +1,9 @@
 #!/bin/bash
 
+source .fonctions	# Charge les fonctions génériques habituellement utilisées dans le script
+
 # Récupère les infos de l'application.
-ynh_version=$(sudo yunohost -v | grep "moulinette:" | cut -d' ' -f2 | cut -d'.' -f1,2)
+YNH_VERSION	# Récupère le numéro de version de Yunohost.
 if [ $ynh_version = "2.4" ]; then
 	app=$YNH_APP_INSTANCE_NAME
 else
@@ -13,6 +15,7 @@ port=$(sudo yunohost app setting $app port)
 language_file=$(sudo yunohost app setting $app language_file)
 parent_dir=/var/www/webapp_$user
 
+CHECK_PATH	# Vérifie et corrige la syntaxe du path.
 path=/ftp_webapp_$admin
 parent_dir=/var/www/webapp_$admin
 final_path=$parent_dir/netftp
@@ -42,16 +45,13 @@ sed -i "s@__DOMAIN__@$domain@" ../conf/settings_authorizations.inc.php
 sed -i "s@__LANG__@$language_file@" ../conf/settings.inc.php
 
 # Copier les fichiers de config
-config_file="$final_path/settings_authorizations.inc.php"
-if [ "$(sudo yunohost app setting $app settings_authorizations.inc.php_file_md5)" != $(md5sum "$config_file" | cut -d' ' -f1) ]; then
-	sudo cp -a "$config_file" "$config_file.backup.$(date '+%d.%m.%y_%Hh%M,%Ss')"	# Si le fichier de config a été modifié, créer un backup.
-fi
+CHECK_MD5_CONFIG "settings_authorizations.inc.php" "$final_path/settings_authorizations.inc.php"	# Enregistre la somme de contrôle du fichier de config
 sudo cp ../conf/settings_authorizations.inc.php $final_path
-config_file="$final_path/settings.inc.php"
-if [ "$(sudo yunohost app setting $app settings.inc.php_file_md5)" != $(md5sum "$config_file" | cut -d' ' -f1) ]; then
-	sudo cp -a "$config_file" "$config_file.backup.$(date '+%d.%m.%y_%Hh%M,%Ss')"	# Si le fichier de config a été modifié, créer un backup.
-fi
+STORE_MD5_CONFIG "settings_authorizations.inc.php" "$final_path/settings_authorizations.inc.php"	# Réenregistre la somme de contrôle du fichier de config
+CHECK_MD5_CONFIG "settings.inc.php" "$final_path/settings.inc.php"	# Enregistre la somme de contrôle du fichier de config
 sudo cp ../conf/settings.inc.php $final_path
+STORE_MD5_CONFIG "settings.inc.php" "$final_path/settings.inc.php"	# Réenregistre la somme de contrôle du fichier de config
+
 
 # Configure les droits d'accès au fichiers
 # -rw-r--r-- sur les fichiers
