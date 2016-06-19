@@ -45,10 +45,10 @@ sed -i "s@__DOMAIN__@$domain@" ../conf/settings_authorizations.inc.php
 sed -i "s@__LANG__@$language_file@" ../conf/settings.inc.php
 
 # Copier les fichiers de config
-CHECK_MD5_CONFIG "settings_authorizations.inc.php" "$final_path/settings_authorizations.inc.php"	# Enregistre la somme de contrôle du fichier de config
+CHECK_MD5_CONFIG "settings_authorizations.inc.php" "$final_path/settings_authorizations.inc.php"	# Créé un backup du fichier de config si il a été modifié.
 sudo cp ../conf/settings_authorizations.inc.php $final_path
 STORE_MD5_CONFIG "settings_authorizations.inc.php" "$final_path/settings_authorizations.inc.php"	# Réenregistre la somme de contrôle du fichier de config
-CHECK_MD5_CONFIG "settings.inc.php" "$final_path/settings.inc.php"	# Enregistre la somme de contrôle du fichier de config
+CHECK_MD5_CONFIG "settings.inc.php" "$final_path/settings.inc.php"	# Créé un backup du fichier de config si il a été modifié.
 sudo cp ../conf/settings.inc.php $final_path
 STORE_MD5_CONFIG "settings.inc.php" "$final_path/settings.inc.php"	# Réenregistre la somme de contrôle du fichier de config
 
