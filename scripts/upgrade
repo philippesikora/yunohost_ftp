@@ -1,7 +1,9 @@
 #!/bin/bash
 
+source .fonctions	# Charge les fonctions génériques habituellement utilisées dans le script
+
 # Récupère les infos de l'application.
-ynh_version=$(sudo yunohost -v | grep "moulinette:" | cut -d' ' -f2 | cut -d'.' -f1,2)
+YNH_VERSION	# Récupère le numéro de version de Yunohost.
 if [ $ynh_version = "2.4" ]; then
 	app=$YNH_APP_INSTANCE_NAME
 else
@@ -13,6 +15,7 @@ port=$(sudo yunohost app setting $app port)
 language_file=$(sudo yunohost app setting $app language_file)
 parent_dir=/var/www/webapp_$user
 
+CHECK_PATH	# Vérifie et corrige la syntaxe du path.
 path=/ftp_webapp_$admin
 parent_dir=/var/www/webapp_$admin
 final_path=$parent_dir/netftp
@@ -32,10 +35,6 @@ sudo sh -c "echo "$port" > /etc/pure-ftpd/conf/Bind"
 # Restart PureFTPd
 sudo service pure-ftpd-ldap restart
 
-# Décompresse la source
-tar -x -f ../sources/net2ftp.tar.gz
-# Copie les fichiers sources
-sudo cp -a net2ftp/. "$final_path"
 # Copie les fichiers additionnels ou modifiés.
 sudo cp -a ../sources/ajouts/. "$final_path"
 # Et copie le fichier de config nginx
@@ -46,8 +45,13 @@ sed -i "s@__DOMAIN__@$domain@" ../conf/settings_authorizations.inc.php
 sed -i "s@__LANG__@$language_file@" ../conf/settings.inc.php
 
 # Copier les fichiers de config
+CHECK_MD5_CONFIG "settings_authorizations.inc.php" "$final_path/settings_authorizations.inc.php"	# Créé un backup du fichier de config si il a été modifié.
 sudo cp ../conf/settings_authorizations.inc.php $final_path
+STORE_MD5_CONFIG "settings_authorizations.inc.php" "$final_path/settings_authorizations.inc.php"	# Réenregistre la somme de contrôle du fichier de config
+CHECK_MD5_CONFIG "settings.inc.php" "$final_path/settings.inc.php"	# Créé un backup du fichier de config si il a été modifié.
 sudo cp ../conf/settings.inc.php $final_path
+STORE_MD5_CONFIG "settings.inc.php" "$final_path/settings.inc.php"	# Réenregistre la somme de contrôle du fichier de config
+
 
 # Configure les droits d'accès au fichiers
 # -rw-r--r-- sur les fichiers
@@ -67,15 +71,7 @@ sudo sed -i "s@__FINALPATH__@$final_path@g" /etc/nginx/conf.d/$domain.d/netftp_$
 sudo sed -i "s@__NAMETOCHANGE__@$app@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
 
 
-# Créer le fichier de configuration du pool php-fpm et le configure.
-sed -i "s@__NAMETOCHANGE__@$app@g" ../conf/php-fpm.conf
-sed -i "s@__FINALPATH__@$final_path@g" ../conf/php-fpm.conf
-finalphpconf=/etc/php5/fpm/pool.d/$app.conf
-sudo cp ../conf/php-fpm.conf $finalphpconf
-sudo chown root: $finalphpconf
-finalphpini=/etc/php5/fpm/conf.d/20-$app.ini
-sudo cp ../conf/php-fpm.ini $finalphpini
-sudo chown root: $finalphpini
+POOL_FPM	# Créer le fichier de configuration du pool php-fpm et le configure.
 
 # Configuration de logrotate
 sudo cp ../conf/logrotate /etc/logrotate.d/$app
@@ -83,6 +79,5 @@ sudo cp ../conf/logrotate /etc/logrotate.d/$app
 
 # Recharge la configuration Nginx et php5-fpm
 sudo service nginx reload
-sudo service php5-fpm reload
 # Régénère la configuration de SSOwat
 sudo yunohost app ssowatconf
