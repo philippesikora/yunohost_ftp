@@ -5,10 +5,13 @@ source .fonctions	# Charge les fonctions génériques habituellement utilisées 
 # Récupère les infos de l'application.
 app=$YNH_APP_INSTANCE_NAME
 
-admin=$(sudo yunohost app setting $app admin)
-domain=$(sudo yunohost app setting $app domain)
-port=$(sudo yunohost app setting $app port)
-language_file=$(sudo yunohost app setting $app language_file)
+# Source app helpers
+source /usr/share/yunohost/helpers
+
+admin=$(ynh_app_setting_get $app admin)
+domain=$(ynh_app_setting_get $app domain)
+port=$(ynh_app_setting_get $app port)
+language_file=$(ynh_app_setting_get $app language_file)
 parent_dir=/var/www/webapp_$user
 
 CHECK_PATH	# Vérifie et corrige la syntaxe du path.
