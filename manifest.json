@@ -11,7 +11,7 @@
 	},
 	"version": "1.0",
 	"url": "http://www.net2ftp.com/",
-	"license": "free",
+	"license": "GPL-2.0",
 	"maintainer": {
 		"name": "Maniack Crudelis",
 		"email": "maniackc_dev@crudelis.fr"

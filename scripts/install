@@ -1,64 +1,88 @@
 #!/bin/bash
 
-source .fonctions	# Charge les fonctions génériques habituellement utilisées dans le script
+#=================================================
+# GENERIC STARTING
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
 
-CLEAN_SETUP () {
-# Nettoyage des résidus d'installation non pris en charge par le script remove.
-# Pas de nettoyage supplémentaire nécessaire ici...
-	echo ""
-}
-TRAP_ON	# Active trap pour arrêter le script si une erreur est détectée.
+source .fonctions
+source /usr/share/yunohost/helpers
 
-# Retrieve arguments
+#=================================================
+# MANAGE FAILURE OF THE SCRIPT
+#=================================================
+
+ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est détectée.
+
+#=================================================
+# RETRIEVE ARGUMENTS FROM THE MANIFEST
+#=================================================
+
 domain=$YNH_APP_ARG_DOMAIN
 admin=$YNH_APP_ARG_ADMIN
 language=$YNH_APP_ARG_LANGUAGE
 
 app=$YNH_APP_INSTANCE_NAME
 
-# Source app helpers
-source /usr/share/yunohost/helpers
-
-# Vérifie que les variables ne sont pas vides.
-CHECK_VAR "$app" "app name not set"
-
-
-path=/ftp_webapp_$admin
+path_url=/ftp_webapp_$admin
 parent_dir=/var/www/webapp_$admin
 final_path=$parent_dir/netftp
 
-CHECK_USER "$admin"	# Vérifie la validité de l'user admin
+#=================================================
+# CHECK IF THE APP CAN BE INSTALLED WITH THIS ARGS
+#=================================================
 
-CHECK_PATH	# Vérifie et corrige la syntaxe du path.
+CHECK_USER "$admin"	# Vérifie la validité de l'user admin
+path_url=$(ynh_normalize_url_path $path_url)	# Vérifie et corrige la syntaxe du path.
 CHECK_DOMAINPATH	# Vérifie la disponibilité du path et du domaine.
+test ! -e "$final_path" || ynh_die "This path already contains a folder"	# Vérifie que le dossier de destination n'est pas déjà utilisé.
+
+#=================================================
+# STORE SETTINGS FROM MANIFEST
+#=================================================
+
+ynh_app_setting_set $app domain $domain
+ynh_app_setting_set $app path $path_url
+ynh_app_setting_set $app admin $admin
+
+#=================================================
+# STANDARD MODIFICATIONS
+#=================================================
+# FIND AND OPEN A PORT
+#=================================================
+
+port=$(ynh_find_port 21021)	# Cherche un port libre.
+# Ouvre le port dans le firewall
+ALL_QUIET sudo yunohost firewall allow TCP $port
+ynh_app_setting_set $app port $port
+
+#=================================================
+# INSTALL DEPENDENCIES
+#=================================================
+
+ynh_install_app_dependencies pure-ftpd-ldap
+
+#=================================================
+# SPECIFIC SETUP
+#=================================================
+# CREATE PARENT DIR IF NOT EXIST
+#=================================================
 
 # Créer le dossier parent des webapp pour l'utilisateur
 if test ! -d $parent_dir
 then	# Créer le dossier parent uniquement si il n'existe pas
-    sudo mkdir $parent_dir
-    # Set permissions
-    sudo chmod 755 -R $parent_dir
-    sudo chown -R root: $parent_dir
+	sudo mkdir $parent_dir
+	# Set permissions
+	sudo chmod 755 -R $parent_dir
+	sudo chown -R root: $parent_dir
 else
-    echo "Création du dossier $parent_dir ignorée, le dossier existe déjà."
+	echo "Création du dossier $parent_dir ignorée, le dossier existe déjà."
 fi
 
-# Vérifie si pure-ftpd est déjà installé
-if test ! -f /usr/sbin/pure-ftpd-ldap
-then # Installe Pure-ftpd uniquement si il ne l'est pas déjà
-
-	FIND_PORT 21021	# Cherche un port libre.
-
-	# Ouvre le port dans le firewall
-	sudo yunohost firewall allow TCP $port > /dev/null 2>&1
-
-    # Install debian dependencies
-    sudo apt-get update
-    sudo apt-get install pure-ftpd-ldap -y -qq
-else
-    echo "Installation de pure-ftpd ignorée, pure-ftpd est déjà installé."
-	port=$(cat /etc/pure-ftpd/conf/Bind)
-fi
+#=================================================
+# SETUP PURE-FTPD
+#=================================================
 
 # Change user ID in configurations
 sed -i "s@__FTPUSER__@$admin@g" ../conf/ldap.conf
@@ -72,81 +96,88 @@ sudo sh -c 'echo "no" > /etc/pure-ftpd/conf/UnixAuthentication'
 sudo sh -c 'echo "50000 50100" > /etc/pure-ftpd/conf/PassivePortRange'
 sudo sh -c "echo "$port" > /etc/pure-ftpd/conf/Bind"
 
-# Ajoute le service au monitoring de Yunohost.
-sudo yunohost service add pure-ftpd-ldap --log "/var/log/pure-ftpd/transfer.log"
+#=================================================
+# RESTART PURE-FTPD
+#=================================================
 
-# Restart PureFTPd
-sudo service pure-ftpd-ldap restart
+sudo systemctl restart pure-ftpd-ldap
 
-# Enregistre les infos dans la config YunoHost
-ynh_app_setting_set $app domain $domain
-ynh_app_setting_set $app path $path
-ynh_app_setting_set $app admin $admin
-ynh_app_setting_set $app port $port
+#=================================================
+# DOWNLOAD, CHECK AND UNPACK NET2FTP
+#=================================================
 
-
-# Crée le repertoire de destination et stocke son emplacement.
-sudo mkdir "$final_path"
 ynh_app_setting_set $app final_path $final_path
+SETUP_SOURCE_ZIP	# Télécharge la source, décompresse et copie dans $final_path
+sudo cp -a $final_path/files_to_upload/. $final_path
+sudo rm -r $final_path/files_to_upload
 
-SETUP_SOURCE "net2ftp.zip"	# Télécharge la source, décompresse et copie dans $final_path
+#=================================================
+# NGINX CONFIGURATION
+#=================================================
 
-# Et copie le fichier de config nginx
+# Copie le fichier de config nginx
 sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
+# Modifie les variables dans le fichier de configuration nginx
+sudo sed -i "s@__PATHTOCHANGE__@$path_url@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
+sudo sed -i "s@__FINALPATH__@$final_path@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
+sudo sed -i "s@__NAMETOCHANGE__@$app@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
 
+#=================================================
+# SETUP NET2FTP
+#=================================================
 
 # Détermine le nom du fichier de langue
 case "$language" in
-   "Arabic") language_file="ar"
-   ;;
-   "Arabic UTF-8") language_file="ar-utf"
-   ;;
-   "Simplified Chinese") language_file="zh"
-   ;;
-   "Traditional Chinese") language_file="tc"
-   ;;
-   "Czech") language_file="cs"
-   ;;
-   "Danish UTF-8") language_file="da"
-   ;;
-   "Dutch") language_file="nl"
-   ;;
-   "English") language_file="en"
-   ;;
-   "English UTF-8") language_file="en-utf"
-   ;;
-   "French") language_file="fr"
-   ;;
-   "German") language_file="de"
-   ;;
-   "Finnish") language_file="fi"
-   ;;
-   "Hebrew") language_file="he"
-   ;;
-   "Hungarian") language_file="hu"
-   ;;
-   "Hungarian UTF-8") language_file="hu-utf"
-   ;;
-   "Italian") language_file="it"
-   ;;
-   "Japanese") language_file="ja"
-   ;;
-   "Polish") language_file="pl"
-   ;;
-   "Portugese") language_file="pt"
-   ;;
-   "Russian") language_file="ru"
-   ;;
-   "Spanish") language_file="es"
-   ;;
-   "Swedish") language_file="sv"
-   ;;
-   "Turkish") language_file="tr"
-   ;;
-   "Ukrainian") language_file="ua"
-   ;;
-   "Vietnamese") language_file="vi"
-   ;;
+	"Arabic") language_file="ar"
+	;;
+	"Arabic UTF-8") language_file="ar-utf"
+	;;
+	"Simplified Chinese") language_file="zh"
+	;;
+	"Traditional Chinese") language_file="tc"
+	;;
+	"Czech") language_file="cs"
+	;;
+	"Danish UTF-8") language_file="da"
+	;;
+	"Dutch") language_file="nl"
+	;;
+	"English") language_file="en"
+	;;
+	"English UTF-8") language_file="en-utf"
+	;;
+	"French") language_file="fr"
+	;;
+	"German") language_file="de"
+	;;
+	"Finnish") language_file="fi"
+	;;
+	"Hebrew") language_file="he"
+	;;
+	"Hungarian") language_file="hu"
+	;;
+	"Hungarian UTF-8") language_file="hu-utf"
+	;;
+	"Italian") language_file="it"
+	;;
+	"Japanese") language_file="ja"
+	;;
+	"Polish") language_file="pl"
+	;;
+	"Portugese") language_file="pt"
+	;;
+	"Russian") language_file="ru"
+	;;
+	"Spanish") language_file="es"
+	;;
+	"Swedish") language_file="sv"
+	;;
+	"Turkish") language_file="tr"
+	;;
+	"Ukrainian") language_file="ua"
+	;;
+	"Vietnamese") language_file="vi"
+	;;
 esac
 ynh_app_setting_set $app language_file $language_file
 
@@ -163,31 +194,44 @@ STORE_MD5_CONFIG "settings_authorizations.inc.php" "$final_path/settings_authori
 STORE_MD5_CONFIG "settings.inc.php" "$final_path/settings.inc.php"	# Enregistre la somme de contrôle du fichier de config
 sudo cp ../conf/registerglobals.inc.php $final_path/includes
 
-# Configure les droits d'accès au fichiers
-# -rw-r--r-- sur les fichiers
-sudo find $final_path -type f -print0 | xargs -0 sudo chmod 644
-# drwxr-xr-x sur les dossiers
-# sudo find $final_path -type d | xargs sudo chmod 755
-sudo find $final_path -type d -print0 | xargs -0 sudo chmod 755
-# Les fichiers appartiennent à root
-sudo chown -R root: $final_path
+#=================================================
+# CREATE DEDICATED USER
+#=================================================
 
-# www-data doit avoir les droits d'écriture sur le dossier temp.
-sudo chown -R www-data: $final_path/temp
+ynh_system_user_create $app	# Créer un utilisateur système dédié à l'app
 
-# Modifie les variables dans le fichier de configuration nginx
-sudo sed -i "s@__PATHTOCHANGE__@$path@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
-sudo sed -i "s@__FINALPATH__@$final_path@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
-sudo sed -i "s@__NAMETOCHANGE__@$app@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
-
+#=================================================
+# PHP-FPM CONFIGURATION
+#=================================================
 
 POOL_FPM	# Créer le fichier de configuration du pool php-fpm et le configure.
 
-# Configuration de logrotate
-sudo cp ../conf/logrotate /etc/logrotate.d/$app
+#=================================================
+# GENERIC FINALISATION
+#=================================================
+# SECURING FILES AND DIRECTORIES
+#=================================================
 
+# Les fichiers appartiennent à root
+sudo chown -R root: $final_path
+# www-data doit avoir les droits d'écriture sur le dossier temp.
+sudo mkdir -p $final_path/temp
+sudo chown -R $app: $final_path/temp
 
-# Recharge la configuration Nginx
-sudo service nginx reload
-# Régénère la configuration de SSOwat
-sudo yunohost app ssowatconf
+#=================================================
+# SETUP LOGROTATE
+#=================================================
+
+ynh_use_logrotate
+
+#=================================================
+# ENABLE SERVICE IN ADMIN PANELS
+#=================================================
+
+sudo yunohost service add pure-ftpd-ldap --log "/var/log/pure-ftpd/transfer.log"
+
+#=================================================
+# RELOAD NGINX
+#=================================================
+
+sudo systemctl reload nginx

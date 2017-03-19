@@ -1,23 +1,40 @@
 #!/bin/bash
 
-source .fonctions	# Charge les fonctions génériques habituellement utilisées dans le script
+#=================================================
+# GENERIC STARTING
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
 
-# Récupère les infos de l'application.
-app=$YNH_APP_INSTANCE_NAME
-
-# Source app helpers
+source .fonctions
 source /usr/share/yunohost/helpers
+
+#=================================================
+# LOAD SETTINGS
+#=================================================
+
+app=$YNH_APP_INSTANCE_NAME
 
 admin=$(ynh_app_setting_get $app admin)
 domain=$(ynh_app_setting_get $app domain)
 port=$(ynh_app_setting_get $app port)
 language_file=$(ynh_app_setting_get $app language_file)
-parent_dir=/var/www/webapp_$user
 
-CHECK_PATH	# Vérifie et corrige la syntaxe du path.
-path=/ftp_webapp_$admin
+path_url=/ftp_webapp_$admin
 parent_dir=/var/www/webapp_$admin
 final_path=$parent_dir/netftp
+
+#=================================================
+# CHECK THE PATH
+#=================================================
+
+path_url=$(ynh_normalize_url_path $path_url)	# Vérifie et corrige la syntaxe du path.
+
+#=================================================
+# SPECIFIC UPGRADE
+#=================================================
+# SETUP PURE-FTPD
+#=================================================
 
 # Change user ID in configurations
 sed -i "s@__FTPUSER__@$admin@g" ../conf/ldap.conf
@@ -31,13 +48,26 @@ sudo sh -c 'echo "no" > /etc/pure-ftpd/conf/UnixAuthentication'
 sudo sh -c 'echo "50000 50100" > /etc/pure-ftpd/conf/PassivePortRange'
 sudo sh -c "echo "$port" > /etc/pure-ftpd/conf/Bind"
 
-# Restart PureFTPd
-sudo service pure-ftpd-ldap restart
+#=================================================
+# RESTART PURE-FTPD
+#=================================================
 
-# Copie les fichiers additionnels ou modifiés.
-sudo cp -a ../sources/ajouts/. "$final_path"
+sudo systemctl restart pure-ftpd-ldap
+
+#=================================================
+# NGINX CONFIGURATION
+#=================================================
+
 # Et copie le fichier de config nginx
 sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
+# Modifie les variables dans le fichier de configuration nginx
+sudo sed -i "s@__PATHTOCHANGE__@$path@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
+sudo sed -i "s@__FINALPATH__@$final_path@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
+sudo sed -i "s@__NAMETOCHANGE__@$app@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
+
+#=================================================
+# SETUP NET2FTP
+#=================================================
 
 # Configurer net2ftp
 sed -i "s@__DOMAIN__@$domain@" ../conf/settings_authorizations.inc.php
@@ -51,32 +81,37 @@ CHECK_MD5_CONFIG "settings.inc.php" "$final_path/settings.inc.php"	# Créé un b
 sudo cp ../conf/settings.inc.php $final_path
 STORE_MD5_CONFIG "settings.inc.php" "$final_path/settings.inc.php"	# Réenregistre la somme de contrôle du fichier de config
 
+#=================================================
+# CREATE DEDICATED USER
+#=================================================
 
-# Configure les droits d'accès au fichiers
-# -rw-r--r-- sur les fichiers
-sudo find $final_path -type f -print0 | xargs -0 sudo chmod 644
-# drwxr-xr-x sur les dossiers
-# sudo find $final_path -type d | xargs sudo chmod 755
-sudo find $final_path -type d -print0 | xargs -0 sudo chmod 755
-# Les fichiers appartiennent à root
-sudo chown -R root: $final_path
+ynh_system_user_create $app	# Créer un utilisateur système dédié à l'app
 
-# www-data doit avoir les droits d'écriture sur le dossier temp.
-sudo chown -R www-data: $final_path/temp
-
-# Modifie les variables dans le fichier de configuration nginx
-sudo sed -i "s@__PATHTOCHANGE__@$path@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
-sudo sed -i "s@__FINALPATH__@$final_path@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
-sudo sed -i "s@__NAMETOCHANGE__@$app@g" /etc/nginx/conf.d/$domain.d/netftp_$admin.conf
-
+#=================================================
+# PHP-FPM CONFIGURATION
+#=================================================
 
 POOL_FPM	# Créer le fichier de configuration du pool php-fpm et le configure.
 
-# Configuration de logrotate
-sudo cp ../conf/logrotate /etc/logrotate.d/$app
+#=================================================
+# GENERIC FINALISATION
+#=================================================
+# SECURING FILES AND DIRECTORIES
+#=================================================
 
+# Les fichiers appartiennent à root
+sudo chown -R root: $final_path
+# www-data doit avoir les droits d'écriture sur le dossier temp.
+sudo chown -R $app: $final_path/temp
 
-# Recharge la configuration Nginx et php5-fpm
-sudo service nginx reload
-# Régénère la configuration de SSOwat
-sudo yunohost app ssowatconf
+#=================================================
+# SETUP LOGROTATE
+#=================================================
+
+ynh_use_logrotate
+
+#=================================================
+# RELOAD NGINX
+#=================================================
+
+sudo systemctl reload nginx

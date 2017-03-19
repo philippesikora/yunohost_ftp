@@ -14,17 +14,13 @@
 		upgrade=1
 		backup_restore=0
 		multi_instance=0
-		wrong_user=1
-		wrong_path=1
 		incorrect_path=0
-		corrupt_source=0
-		fail_download_source=0
 		port_already_use=1	(21021)
-		final_path_already_use=0
 ;;; Levels
 	Level 1=auto
 	Level 2=auto
 	Level 3=auto
+# Level 4: https://github.com/YunoHost-Apps/ftp_support_webapp_ynh/blob/master/Reste%20%C3%A0%20faire#L3
 	Level 4=0
 	Level 5=auto
 	Level 6=auto
