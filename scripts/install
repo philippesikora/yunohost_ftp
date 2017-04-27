@@ -52,7 +52,7 @@ ynh_app_setting_set $app admin $admin
 # FIND AND OPEN A PORT
 #=================================================
 
-port=$(ynh_find_port 21021)	# Cherche un port libre.
+port=$(ynh_find_port 21)	# Cherche un port libre.
 # Ouvre le port dans le firewall
 ALL_QUIET sudo yunohost firewall allow TCP $port
 ynh_app_setting_set $app port $port
