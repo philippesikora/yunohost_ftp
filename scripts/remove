@@ -42,7 +42,7 @@ ynh_remove_app_dependencies
 # REMOVE THE MAIN DIR OF THE APP
 #=================================================
 
-SECURE_REMOVE '$parent_dir/netftp'	# Suppression du dossier de l'application
+SECURE_REMOVE '$parent_dir'	# Suppression du dossier de l'application
 
 #=================================================
 # REMOVE THE NGINX CONFIGURATION
