@@ -27,7 +27,7 @@ app=$YNH_APP_INSTANCE_NAME
 
 path_url=/ftp_webapp_$admin
 parent_dir=/var/www/webapp_$admin
-final_path=$parent_dir
+final_path=$parent_dir/netftp
 
 #=================================================
 # CHECK IF THE APP CAN BE INSTALLED WITH THIS ARGS
