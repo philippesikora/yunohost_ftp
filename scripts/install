@@ -114,6 +114,14 @@ sudo sed -i "s@__FINALPATH__@$final_path@g" /etc/nginx/conf.d/$domain.d/ftp_$adm
 sudo sed -i "s@__NAMETOCHANGE__@$app@g" /etc/nginx/conf.d/$domain.d/ftp_$admin.conf
 
 #=================================================
+# CREATE DEDICATED USER
+#=================================================
+
+ynh_system_user_create $app	# Créer un utilisateur système dédié à l'app
+
+
+
+#=================================================
 # PHP-FPM CONFIGURATION
 #=================================================
 
