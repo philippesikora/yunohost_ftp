@@ -103,19 +103,21 @@ sudo sh -c "echo "$port" > /etc/pure-ftpd/conf/Bind"
 sudo systemctl restart pure-ftpd-ldap
 
 #=================================================
+# NGINX CONFIGURATION
+#=================================================
+
+# Copie le fichier de config nginx
+sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/ftp_$admin.conf
+# Modifie les variables dans le fichier de configuration nginx
+sudo sed -i "s@__PATHTOCHANGE__@$path_url@g" /etc/nginx/conf.d/$domain.d/ftp_$admin.conf
+sudo sed -i "s@__FINALPATH__@$final_path@g" /etc/nginx/conf.d/$domain.d/ftp_$admin.conf
+sudo sed -i "s@__NAMETOCHANGE__@$app@g" /etc/nginx/conf.d/$domain.d/ftp_$admin.conf
+
+#=================================================
 # PHP-FPM CONFIGURATION
 #=================================================
 
 POOL_FPM	# Créer le fichier de configuration du pool php-fpm et le configure.
-
-#=================================================
-
-#=================================================
-# CREATE DEDICATED USER
-#=================================================
-
-ynh_system_user_create $app	# Créer un utilisateur système dédié à l'app
-
 
 #=================================================
 # SETUP LOGROTATE
@@ -128,17 +130,6 @@ ynh_use_logrotate
 #=================================================
 
 sudo yunohost service add pure-ftpd-ldap --log "/var/log/pure-ftpd/transfer.log"
-
-#=================================================
-# NGINX CONFIGURATION
-#=================================================
-
-# Copie le fichier de config nginx
-sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/ftp_$admin.conf
-# Modifie les variables dans le fichier de configuration nginx
-sudo sed -i "s@__PATHTOCHANGE__@$path_url@g" /etc/nginx/conf.d/$domain.d/ftp_$admin.conf
-sudo sed -i "s@__FINALPATH__@$final_path@g" /etc/nginx/conf.d/$domain.d/ftp_$admin.conf
-sudo sed -i "s@__NAMETOCHANGE__@$app@g" /etc/nginx/conf.d/$domain.d/ftp_$admin.conf
 
 #=================================================
 # RELOAD NGINX
