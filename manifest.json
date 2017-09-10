@@ -1,6 +1,6 @@
 {
-	"name": "FTP support for webapp",
-	"id": "ftp_webapp",
+	"name": "Camera",
+	"id": "camera",
 	"packaging_format": 1,
 	"requirements": {
 		"yunohost": ">= 2.4"
